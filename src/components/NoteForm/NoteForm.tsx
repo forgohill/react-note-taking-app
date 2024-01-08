@@ -1,30 +1,34 @@
 import { FormEvent, useRef, useState } from 'react';
 import { Button, Col, Form, Row, Stack } from 'react-bootstrap'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { v4 as uuidv4 } from 'uuid'
 import CreatableReactSelect from 'react-select/creatable'
 import { NoteData, Tag } from '../App/App'
 
 type NoteFormProps = {
   onSubmit: (date: NoteData) => void
+  onAddTag: (tag: Tag) => void
+  availableTags: Tag[]
 }
 
-export default function NoteForm({ onSubmit }: NoteFormProps) {
+export default function NoteForm({ onSubmit, onAddTag, availableTags }: NoteFormProps) {
   const titleRef = useRef<HTMLInputElement>(null);
   const markdownRef = useRef<HTMLTextAreaElement>(null);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
-
+  const navigate = useNavigate();
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     onSubmit({
       title: titleRef.current!.value,
       markdown: markdownRef.current!.value,
-      tags: [],
+      tags: selectedTags,
     })
+    navigate('..')
   }
 
   return (
-    <Form >
+    <Form onSubmit={handleSubmit}>
       <Stack
         gap={4}>
         <Row>
@@ -38,7 +42,15 @@ export default function NoteForm({ onSubmit }: NoteFormProps) {
             <Form.Group controlId='tags'>
               <Form.Label>Tags</Form.Label>
               <CreatableReactSelect isMulti
+                onCreateOption={label => {
+                  const newTag = { id: uuidv4(), label }
+                  onAddTag(newTag)
+                  setSelectedTags(prev => [...prev, newTag])
+                }}
                 value={selectedTags.map(tag => {
+                  return { label: tag.label, value: tag.id }
+                })}
+                options={availableTags.map(tag => {
                   return { label: tag.label, value: tag.id }
                 })}
                 onChange={tags => {
@@ -55,7 +67,7 @@ export default function NoteForm({ onSubmit }: NoteFormProps) {
           <Form.Label>Body</Form.Label>
           <Form.Control
             ref={markdownRef}
-            required as={'textarea'} rows={15} />
+            required as={'textarea'} rows={5} />
         </Form.Group>
         <Stack
           gap={2} className='justify-content-end'
